@@ -5,7 +5,9 @@
 [Pablo García Muñoz](https://www.linkedin.com/in/pablo-garc%C3%ADa-mu%C3%B1oz-a9b2402a9/) y [Hugo Peralta Muñoz](https://github.com/Pykoncio)
 
 
-Esta aplicación permite generar imágenes de superhéroes utilizando un modelo de difusión mediante una interfaz creada con Streamlit. La aplicación se comunica con una API (por ejemplo, Stable Diffusion) que genera las imágenes en función de los parámetros especificados.
+Esta aplicación permite generar imágenes de superhéroes utilizando un modelo mediante una interfaz creada con Streamlit. La aplicación se comunica con una API (Stable Diffusion) que genera las imágenes en función de los parámetros especificados.
+
+El modelo usado ha sido: [Comic-Diffusion-v2](https://huggingface.co/ogkalu/Comic-Diffusion/tree/main)
 
 ## Características
 
@@ -15,8 +17,8 @@ Esta aplicación permite generar imágenes de superhéroes utilizando un modelo 
   - Número de pasos ("steps") y CFG Scale.
   - Dimensiones de la imagen (width y height).
   - Selección de sampler (e.g., Euler a, DDIM, PLMS).
-- Visualización de un spinner, GIF de carga y barra de progreso durante la generación.
-- Visualización centrada de la imagen generada.
+- Visualización de un GIF de carga.
+- Visualización de la imagen generada.
 
 ## Requisitos
 
