@@ -25,7 +25,7 @@ with st.form("form_imagen"):
 
 if submitted:
     # URL de la API
-    url = "http://host.docker.internal:7860/api/v1/txt2img"
+    url = "http://127.0.0.1:7860/sdapi/v1/txt2img"
 
     payload = {
         "prompt": prompt,
@@ -41,46 +41,39 @@ if submitted:
         loading_placeholder = st.empty()
         loading_gif = "https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExZHFpeWhsOGlrMjdnbHRkdW43bnRpcXhmZXhhNnZkNXlxNGYweGVxciZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/xTkcEQACH24SMPxIQg/giphy.gif"
         loading_placeholder.image(loading_gif, width=300)
-        
-        progress_bar = st.progress(0)
-        for i in range(0, 101, 10):
-            time.sleep(0.1)
-            progress_bar.progress(i)
-        
-        response = requests.post(url, json=payload, stream=True)
-        total_size = int(response.headers.get("content-length", 0))
-        chunk_size = max(total_size // 100, 1024)
 
-        output_dir = "generated_samples"
+        # Realiza la solicitud a la API
+        response = requests.post(url, json=payload)
+
+    # Verifica si la solicitud fue exitosa
+    if response.status_code == 200:
+        # Guarda el contenido JSON de la respuesta en una variable
+        response_data = response.json()  # Asegúrate de consumir el JSON completo aquí
+
+        # Decodifica la imagen generada (en base64) y la guarda en un archivo PNG
+        image_data = base64.b64decode(response_data["images"][0])  # Decodifica la imagen
+        output_dir = "generated_samples"  # Carpeta para guardar las imágenes
         if not os.path.exists(output_dir):
             os.makedirs(output_dir, exist_ok=True)
 
+        # Asigna un nombre único basado en la fecha/hora
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         image_filename = f"hero_{timestamp}.png"
         image_path = os.path.join(output_dir, image_filename)
 
-    if response.status_code == 200:
         with open(image_path, "wb") as f:
-            downloaded = 0
-            for chunk in response.iter_content(chunk_size=chunk_size):
-                if chunk:
-                    f.write(chunk)
-                    downloaded += len(chunk)
-                    progress = min(int((downloaded / total_size) * 100), 100)
-                    progress_bar.progress(progress)
-                    time.sleep(0.1)
-            
-            image_data = base64.b64decode(response.json()["images"][0])
-
-            with open(image_path, "wb") as f:
-                f.write(image_data)
-            
-            st.markdown('<div style="text-align: center;">', unsafe_allow_html=True)
-            st.image("output.png", caption="Imagen Generada")
-            st.download_button("📥 Descargar Imagen", data=open(image_path, "rb").read(), file_name="hero_image.png", mime="image/png")
-            st.markdown('</div>', unsafe_allow_html=True)
+            f.write(image_data)  # Guarda la imagen en disco
+        
+        # Muestra la imagen generada en la interfaz de usuario
+        st.markdown('<div style="text-align: center;">', unsafe_allow_html=True)
+        st.image(image_path, caption="Imagen Generada")
+        # Agrega un botón para descargar la imagen generada
+        st.download_button("📥 Descargar Imagen", data=open(image_path, "rb").read(), file_name=image_filename, mime="image/png")
+        st.markdown('</div>', unsafe_allow_html=True)
     else:
+        # En caso de error, muestra un mensaje con el código y el texto del error
         st.error(f"❌ Error: {response.status_code} - {response.text}")
+
 
 # Pie de página
 st.markdown("---")
