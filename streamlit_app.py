@@ -1,36 +1,32 @@
-# Import de librerias
 import streamlit as st
 import requests
 import base64
 import time
+from tqdm import tqdm
+import os
+from datetime import datetime
 
-# Título de la aplicación
 st.title("Generador de Superhéroes")
 
-# Formulario para la creación del prompt
 with st.form("form_imagen"):
-    # Entrada de texto (por defecto)
-    prompt = st.text_input("Prompt", "superhero in Marvel comic style, dynamic action pose")
-    # Entrada negativa del texto (por defecto)
-    negative_prompt = st.text_input("Negative Prompt", "low quality, blurry")
-    # Entrada de pasos para crear la imagen
-    steps = st.number_input("Steps", min_value=1, max_value=100, value=20)
-    # Entrada de la imaginación de la imagen
-    cfg_scale = st.number_input("CFG Scale", min_value=1.0, max_value=20.0, value=7.0)
-    # Entrada del ancho
-    width = st.number_input("Width", min_value=64, max_value=1024, value=256, step=64)
-    # Entrada del alto
-    height = st.number_input("Height", min_value=64, max_value=1024, value=256, step=64)
-    # Seleccionador del "sampler"
-    sampler_index = st.selectbox("Sampler", ["Euler a", "DDIM", "PLMS"])
-    # Botón de envío del formulario
-    submitted = st.form_submit_button("Generar Héroe")
+    st.header("🔧 Configuración de Imagen")
+    prompt = st.text_area("Descripción del Héroe", "superhero in Marvel comic style, dynamic action pose")
+    negative_prompt = st.text_area("Elementos No Deseados de la Imagen", "low quality, blurry")
+    steps = st.slider("Pasos de Generación", min_value=1, max_value=100, value=20)
+    cfg_scale = st.slider("Escala CFG", min_value=1.0, max_value=20.0, value=7.0)
+    col1, col2 = st.columns(2)
+    with col1:
+        width = st.selectbox("Ancho de la imagen a generar", [64, 128, 256, 512, 1024], index=2)
+    with col2:
+        height = st.selectbox("Alto de la imagen a generar", [64, 128, 256, 512, 1024], index=2)
 
-# Si se ha enviado el formulario
+    sampler_index = st.selectbox("Algoritmo de Muestreo", ["Euler A", "DDIM", "PLMS"])
+    submitted = st.form_submit_button("🚀 Generar Héroe")
+
 if submitted:
     # URL de la API
-    url = "http://host.docker.internal:7860/sdapi/v1/txt2img"
-    # Payload de la petición
+    url = "http://host.docker.internal:7860/api/v1/txt2img"
+
     payload = {
         "prompt": prompt,
         "negative_prompt": negative_prompt,
@@ -41,44 +37,50 @@ if submitted:
         "sampler_index": sampler_index
     }
     
-    # Se puede usar un spinner, y opcionalmente mostrar un GIF o una barra de progreso simulado.
     with st.spinner("Generando imagen, por favor espere..."):
-        # (Opcional) Mostrar un GIF animado mientras se procesa
         loading_placeholder = st.empty()
-        # Reemplaza el siguiente URL por el de tu GIF de carga si lo deseas.
-        loading_gif = "https://media.giphy.com/media/y1ZBcOGOOtlpC/giphy.gif"
-        loading_placeholder.image(loading_gif, use_container_width=True)
+        loading_gif = "https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExZHFpeWhsOGlrMjdnbHRkdW43bnRpcXhmZXhhNnZkNXlxNGYweGVxciZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/xTkcEQACH24SMPxIQg/giphy.gif"
+        loading_placeholder.image(loading_gif, width=300)
         
-        # Simular una barra de progreso (solo es visual, sin feedback real de la API)
         progress_bar = st.progress(0)
         for i in range(0, 101, 10):
             time.sleep(0.1)
             progress_bar.progress(i)
         
-        response = requests.post(url, json=payload)
-        loading_placeholder.empty()  # Oculta el GIF al completarse la petición
+        response = requests.post(url, json=payload, stream=True)
+        total_size = int(response.headers.get("content-length", 0))
+        chunk_size = max(total_size // 100, 1024)
+
+        output_dir = "generated_samples"
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir, exist_ok=True)
+
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        image_filename = f"hero_{timestamp}.png"
+        image_path = os.path.join(output_dir, image_filename)
 
     if response.status_code == 200:
-        image_data = base64.b64decode(response.json()["images"][0])
-        with open("output.png", "wb") as f:
-            f.write(image_data)
-        # Centrar la imagen en la página
-        st.markdown(
-            """
-            <style>
-            .centered {
-                display: flex;
-                justify-content: center;
-            }
-            </style>
-            """,
-            unsafe_allow_html=True
-        )
-        st.markdown('<div class="centered">', unsafe_allow_html=True)
-        st.image("output.png", caption="Imagen Generada")
-        st.markdown("</div>", unsafe_allow_html=True)
+        with open(image_path, "wb") as f:
+            downloaded = 0
+            for chunk in response.iter_content(chunk_size=chunk_size):
+                if chunk:
+                    f.write(chunk)
+                    downloaded += len(chunk)
+                    progress = min(int((downloaded / total_size) * 100), 100)
+                    progress_bar.progress(progress)
+                    time.sleep(0.1)
+            
+            image_data = base64.b64decode(response.json()["images"][0])
+
+            with open(image_path, "wb") as f:
+                f.write(image_data)
+            
+            st.markdown('<div style="text-align: center;">', unsafe_allow_html=True)
+            st.image("output.png", caption="Imagen Generada")
+            st.download_button("📥 Descargar Imagen", data=open(image_path, "rb").read(), file_name="hero_image.png", mime="image/png")
+            st.markdown('</div>', unsafe_allow_html=True)
     else:
-        st.error(f"Error: {response.status_code} - {response.text}")
+        st.error(f"❌ Error: {response.status_code} - {response.text}")
 
 # Pie de página
 st.markdown("---")
