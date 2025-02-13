@@ -20,6 +20,19 @@ El modelo usado ha sido: [Comic-Diffusion-v2](https://huggingface.co/ogkalu/Comi
 - Visualización de un GIF de carga.
 - Visualización de la imagen generada.
 
+## Visualización en Acción
+
+Durante la generación de la imagen, se muestra el siguiente GIF como indicador de carga:
+
+![GIF de carga](video_image_generator.gif)
+
+## Ejemplos de Imágenes Generadas
+
+A continuación se muestran algunos ejemplos de imágenes generadas por la aplicación:
+
+![Ejemplo 1](generated_samples\hero_20250213_081018.png)
+![Ejemplo 2](generated_samples\hero_20250213_092917.png)
+
 ## Requisitos
 
 - [Docker](https://www.docker.com/) (opcional, para ejecución en contenedor)
