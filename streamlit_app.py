@@ -2,6 +2,8 @@ import streamlit as st
 import requests
 import base64
 import os
+from PIL import Image
+import io
 from datetime import datetime
 
 st.title("Generador de Superhéroes")
@@ -45,6 +47,12 @@ if submitted:
         response_data = response.json() 
 
         image_data = base64.b64decode(response_data["images"][0]) 
+
+        img = Image.open(io.BytesIO(image_data))
+        img_buffer = io.BytesIO()
+        img.save(img_buffer, format="PNG")
+        img_buffer.seek(0)
+
         output_dir = "generated_samples"  
         if not os.path.exists(output_dir):
             os.makedirs(output_dir, exist_ok=True)
@@ -54,11 +62,11 @@ if submitted:
         image_path = os.path.join(output_dir, image_filename)
 
         with open(image_path, "wb") as f:
-            f.write(image_data)  
+            f.write(img_buffer.getvalue())  
         
         st.markdown('<div style="text-align: center;">', unsafe_allow_html=True)
-        st.image(image_path, caption="Imagen Generada")
-        st.download_button("📥 Descargar Imagen", data=open(image_path, "rb").read(), file_name=image_filename, mime="image/png")
+        st.image(img, caption="Imagen Generada")
+        st.download_button("📥 Descargar Imagen", data=img_buffer.getvalue(), file_name=image_filename, mime="image/png")
         st.markdown('</div>', unsafe_allow_html=True)
     else:
         st.error(f"❌ Error: {response.status_code} - {response.text}")
