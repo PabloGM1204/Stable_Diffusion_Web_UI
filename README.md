@@ -30,8 +30,8 @@ Durante la generación de la imagen, se muestra el siguiente GIF como indicador 
 
 A continuación se muestran algunos ejemplos de imágenes generadas por la aplicación:
 
-![Ejemplo 1](generated_samples\hero_20250213_081018.png)
-![Ejemplo 2](generated_samples\hero_20250213_092917.png)
+![Ejemplo 1](generated_samples/hero_20250213_081018.png)
+![Ejemplo 2](generated_samples/hero_20250213_092917.png)
 
 ## Requisitos
 
