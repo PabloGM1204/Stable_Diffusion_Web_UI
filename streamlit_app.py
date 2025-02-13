@@ -62,7 +62,9 @@ if submitted:
         image_path = os.path.join(output_dir, image_filename)
 
         with open(image_path, "wb") as f:
-            f.write(img_buffer.getvalue())  
+            f.write(img_buffer.getvalue())
+
+        loading_placeholder.empty() 
         
         st.markdown('<div style="text-align: center;">', unsafe_allow_html=True)
         st.image(img, caption="Imagen Generada")
@@ -70,7 +72,6 @@ if submitted:
         st.markdown('</div>', unsafe_allow_html=True)
     else:
         st.error(f"❌ Error: {response.status_code} - {response.text}")
-
 
 st.markdown("---")
 st.markdown("Especialización en Inteligencia Artificial y Big Data - CPIFP Alan Turing")
